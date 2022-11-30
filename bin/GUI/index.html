@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Web Search</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+    	$(document).ready(function(){
+    	    $(document).on('click','.search_button',function(){
+                var search_val=$('#text1').val();
+                $('.result_table').find("tr:gt(0)").remove();
+                if(search_val!="")
+                {
+                    $.ajax({
+                      url: "http://localhost:7003/search",
+                      method:"POST",
+                      data:{'Search_Query':search_val},
+                      success:function(data){
+                        $('.sugges').html("");
+                        $('.suggestions').hide();
+                        $('.total').hide();
+                        $(".well").html("");
+                        $(".result_div").html("");
+                        $(".cluster").show();
+                        $(".word2vec").show();
+                        var json_data=jQuery.parseJSON(data);
+                        if(!jQuery.isEmptyObject(json_data.Suggestions))
+                        {
+                            $.each(json_data.Suggestions,function(key,prop){
+                                for(var suggest in prop)
+                                {
+                                    console.log(search_val);
+                                    console.log(key);
+                                    console.log(suggest);
+                                    var copy= search_val;
+                                    var suggestion= copy.replace(key,prop[suggest]);
+                                    $(".sugges").append("<a href='JavaScript:void(0);' class='update_search' data-value='"+suggestion+"'>"+suggestion+"</a><br>");
+                                }
+                            });
+                            $('.suggestions').show();
+                        }
+                        if(!jQuery.isEmptyObject(json_data.analysis))
+                        {
+                            console.log(json_data.analysis[0]);
+                            list="<b>Most Occurring Domains (Occured "+json_data.analysis[0].most_times+" Times)</b><br><ul>";
+                            json_data.analysis[0].most_domain.forEach(element => {
+                               list=list+"<li>"+element+"</li>"; 
+                            });
+                            list=list+"</ul><b>Least Occurring Domains (Occured "+json_data.analysis[0].least_times+" Times)</b><br><ul>";
+                            json_data.analysis[0].least_domain.forEach(element => {
+                                list=list+"<li>"+element+"</li>";
+                            });
+                            list=list+"<ul>";
+                            $(".well").html(list);
+                            $(".cluster").show();
+                        }
+                        else
+                        {
+                            $(".well").html("Cannot Load Analysis");
+                        }
+                        if(!jQuery.isEmptyObject(json_data.results))
+                        {
+                            html="";
+                            json_data.results.forEach(element => {
+                                html=html+"<div class='result_solo' style='margin: 12px;'>"+
+                                    "<a href='"+element.Link+"' style='font-size: 25px;color: white;text-decoration: underline;'>"+element.Domain+"</a><br>"+
+                                    "<span style='font-size: 15px;'><i>Keyword Occured "+element.occurences+" times</i></span>"+
+                                    "<p style='font-size: 18px;color: black;'>"+element.Blob+"</p>"
+                                    +"</div>"; 
+                            });
+                            $(".result_div").html(html);        
+                        }
+                        else
+                        {
+                            alert("No Results Found");
+                        }
+                        console.log(json_data);
+                      }
+                    })
+                    $('.result_div').show();
+                }
+                else
+                {
+                    $('.result_div').hide();
+                    alert("Please Enter a Search Query");
+                }
+    	    });
+    	    $(document).on('click','.update_search',function(){
+    	        var vall=$(this).attr('data-value');
+    	        $('#text1').value(vall);
+    	        $('.search_button').click();
+    	    });
+    	});
+    </script>
+
+
+ </head>
+
+ <body>
+ <div class="container">
+ <div class="row">
+     <div class="col-sm-4 ">
+         <h1 class="display-4 text-light text-center">UwinSearch</h1>
+     </div>
+     <div class="col-sm-6">
+         <div class="box">
+             <i class="fa fa-search" aria-hidden="true"></i>
+             <input type="text" id = "text1" name="" placeholder="Search Query">
+         </div>
+     </div>
+     <div class="col-sm-2">
+         <button type="button" class="search_button btn btn-light
+          btn-md"  style="margin-top:50px;">Search</button>
+     </div>
+     <div class="col-sm-12 cluster" style="margin-top:20px;display:none;">
+         <button style="width:100%" class="btn btn-light" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+             Domain Frequency Analysis
+         </button>
+         <div class="collapse" id="collapseExample">
+             <div class="well">
+
+             </div>
+         </div>
+     </div>
+     <div class="col-sm-12">
+        <div class="result_div" style="padding:15px;background: #2020206b;">
+            
+         </div>
+     </div>
+ </div>
+ </div>
+ </body>
+ </html>
